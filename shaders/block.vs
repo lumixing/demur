@@ -10,9 +10,11 @@ out vec3 v_normal;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
+uniform ivec3 chunk_pos;
 
-void main() {	
-	gl_Position = proj * view * model * vec4(a_position, 1.0);
+void main() {
+	vec3 position = a_position + chunk_pos * 32;
+	gl_Position = proj * view * model * vec4(position, 1.0);
 	v_color = vec4(a_color, 1.0);
 	v_normal = a_normal;
 }

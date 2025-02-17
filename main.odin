@@ -60,7 +60,12 @@ main :: proc() {
 		model := glm.identity(glm.mat4)
 		gl.UniformMatrix4fv(glv.uniforms["model"].location, 1, false, raw_data(&model))
 
-		gl.DrawElements(gl.TRIANGLES, i32(len(glv.indices)), gl.UNSIGNED_INT, nil)
+		for &chunk in glv.chunks {
+			gl.Uniform3iv(glv.uniforms["chunk_pos"].location, 1, raw_data(&chunk.position))
+			chunk_use(&chunk, glv.vao)
+			gl.DrawElements(gl.TRIANGLES, i32(len(chunk.indices)), gl.UNSIGNED_INT, nil)
+		}
+
 	}
 }
 

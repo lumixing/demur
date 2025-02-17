@@ -38,9 +38,9 @@ glfw_deinit :: proc() {
 
 GLVars :: struct {
 	program: u32,
-	vao, vbo, ebo: u32,
+	vao: u32,
 	uniforms: gl.Uniforms,
-	indices: []u32,
+	chunks: []Chunk,
 }
 
 gl_init :: proc() -> GLVars {
@@ -56,45 +56,69 @@ gl_init :: proc() -> GLVars {
 
 	vao: u32
 	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
 
-	chunk: Chunk
-	chunk.position = {}
-	chunk.blocks = make([][][]Block, CHUNK_SIZE) // @free
-	for i in 0..<CHUNK_SIZE {
-		chunk.blocks[i] = make([][]Block, CHUNK_SIZE)
-		for j in 0..<CHUNK_SIZE {
-			chunk.blocks[i][j] = make([]Block, CHUNK_SIZE)
+	chunks: [dynamic]Chunk
+
+	for x in 0..<16 {
+		for y in 0..<2 {
+			for z in 0..<16 {
+				chunk: Chunk
+				chunk.position = {i32(x), i32(y), i32(z)}
+				chunk.blocks = make([][][]Block, CHUNK_SIZE) // @free
+				for i in 0..<CHUNK_SIZE {
+					chunk.blocks[i] = make([][]Block, CHUNK_SIZE)
+					for j in 0..<CHUNK_SIZE {
+						chunk.blocks[i][j] = make([]Block, CHUNK_SIZE)
+					}
+				}
+				chunk_init(&chunk)
+				chunk_gen(&chunk)
+				chunk_add_blocks(&chunk)
+				chunk_setup(&chunk)
+
+				append(&chunks, chunk)
+			}
 		}
 	}
-	chunk_init(&chunk)
-	chunk_gen(&chunk)
-	chunk_add_blocks(&chunk)
 
+	
+
+	// gl.Uniform3iv(uniforms["chunk_pos"].location, 1, raw_data(&chunk.position))
+
+	// chunk2: Chunk
+	// chunk2.position = {0, 1, 0}
+	// chunk2.blocks = make([][][]Block, CHUNK_SIZE) // @free
+	// for i in 0..<CHUNK_SIZE {
+	// 	chunk2.blocks[i] = make([][]Block, CHUNK_SIZE)
+	// 	for j in 0..<CHUNK_SIZE {
+	// 		chunk2.blocks[i][j] = make([]Block, CHUNK_SIZE)
+	// 	}
+	// }
+	// chunk_init(&chunk2)
+	// chunk_gen(&chunk2)
+	// chunk_add_blocks(&chunk2)
+	// chunk_setup(&chunk2)
+
+	// append(&chunks, chunk2)
+
+	// gl.Uniform3iv(uniforms["chunk_pos"].location, 1, raw_data(&chunk2.position))
 	// fmt.printfln("%d vertices = %f mb", len(vertices), f32(len(vertices)*size_of(Vertex))/1024./1024.)
 	// fmt.printfln("%d indices = %f mb", len(indices), f32(len(indices)*size_of(u32))/1024./1024.)
 	// fmt.printfln("%d blocks = %d unopt vertices", b, b*4*6)
 
-	gl.BindVertexArray(vao)
-	gl.BindBuffer(gl.ARRAY_BUFFER, chunk.vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, len(chunk.vertices)*size_of(chunk.vertices[0]), raw_data(chunk.vertices), gl.STATIC_DRAW)
-	gl.EnableVertexAttribArray(0)
-	gl.EnableVertexAttribArray(1)
-	gl.EnableVertexAttribArray(2)
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, pos))
-	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, col))
-	gl.VertexAttribPointer(2, 3, gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, nor))
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, chunk.ebo)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(chunk.indices)*size_of(chunk.indices[0]), raw_data(chunk.indices), gl.STATIC_DRAW)
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-	gl.BindVertexArray(0)
+	// chunk_use(&chunk, vao)
 
-	return {program, vao, chunk.vbo, chunk.ebo, uniforms, chunk.indices[:]}
+	// chunk_use(&chunk2, vao)
+
+	// gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+	// gl.BindVertexArray(0)
+
+	return {program, vao, uniforms, chunks[:]}
 }
 
 gl_deinit :: proc(glv: ^GLVars) {
 	defer gl.DeleteProgram(glv.program)
 	defer delete(glv.uniforms)
 	defer gl.DeleteVertexArrays(1, &glv.vao)
-	defer gl.DeleteBuffers(1, &glv.vbo)
-	defer gl.DeleteBuffers(1, &glv.ebo)
 }

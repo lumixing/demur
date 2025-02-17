@@ -57,148 +57,38 @@ gl_init :: proc() -> GLVars {
 	vao: u32
 	gl.GenVertexArrays(1, &vao)
 
-	vbo, ebo: u32
-	gl.GenBuffers(1, &vbo)
-	gl.GenBuffers(1, &ebo)
-
-	Vertex :: struct {
-		pos: glm.vec3,
-		col: glm.vec3,
-		nor: glm.vec3,
-	}
-
-	add_block :: proc(vertices: ^[dynamic]Vertex, indices: ^[dynamic]u32, blocks: [CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE]bool, pos: glm.vec3, col: glm.vec3) {
-		@(static) idx: u32 = 0
-
-		if (pos.z - 1 >= 0 && !blocks[int(pos.x)][int(pos.y)][int(pos.z - 1)]) || !(pos.z - 1 >= 0) {
-			append(vertices, ..[]Vertex{
-				{({0, 1, 0} + pos), col, {0, 0, -1}},
-				{({0, 0, 0} + pos), col, {0, 0, -1}},
-				{({1, 0, 0} + pos), col, {0, 0, -1}},
-				{({1, 1, 0} + pos), col, {0, 0, -1}},
-			})
-			append(indices, ..[]u32{
-				0+4*idx, 1+4*idx, 2+4*idx,
-				2+4*idx, 3+4*idx, 0+4*idx,
-			})
-			idx += 1
-		}
-
-		if (pos.z + 1 < CHUNK_SIZE && !blocks[int(pos.x)][int(pos.y)][int(pos.z + 1)]) || !(pos.z + 1 < CHUNK_SIZE) {
-			append(vertices, ..[]Vertex{
-				{({0, 1, 1} + pos), col, {0, 0, +1}},
-				{({0, 0, 1} + pos), col, {0, 0, +1}},
-				{({1, 0, 1} + pos), col, {0, 0, +1}},
-				{({1, 1, 1} + pos), col, {0, 0, +1}},
-			})
-			append(indices, ..[]u32{
-				0+4*idx, 1+4*idx, 2+4*idx,
-				2+4*idx, 3+4*idx, 0+4*idx,
-			})
-			idx += 1
-		}
-
-		if (pos.y - 1 >= 0 && !blocks[int(pos.x)][int(pos.y - 1)][int(pos.z)]) || !(pos.y - 1 >= 0) {
-			append(vertices, ..[]Vertex{
-				{({0, 0, 1} + pos), col, {0, -1, 0}},
-				{({0, 0, 0} + pos), col, {0, -1, 0}},
-				{({1, 0, 0} + pos), col, {0, -1, 0}},
-				{({1, 0, 1} + pos), col, {0, -1, 0}},
-			})
-			append(indices, ..[]u32{
-				0+4*idx, 1+4*idx, 2+4*idx,
-				2+4*idx, 3+4*idx, 0+4*idx,
-			})
-			idx += 1
-		}
-
-		if (pos.y + 1 < CHUNK_SIZE && !blocks[int(pos.x)][int(pos.y + 1)][int(pos.z)]) || !(pos.y + 1 < CHUNK_SIZE) {
-			append(vertices, ..[]Vertex{
-				{({0, 1, 1} + pos), col, {0, +1, 0}},
-				{({0, 1, 0} + pos), col, {0, +1, 0}},
-				{({1, 1, 0} + pos), col, {0, +1, 0}},
-				{({1, 1, 1} + pos), col, {0, +1, 0}},
-			})
-			append(indices, ..[]u32{
-				0+4*idx, 1+4*idx, 2+4*idx,
-				2+4*idx, 3+4*idx, 0+4*idx,
-			})
-			idx += 1
-		}
-
-		if (pos.x - 1 >= 0 && !blocks[int(pos.x - 1)][int(pos.y)][int(pos.z)]) || !(pos.x - 1 >= 0) {
-			append(vertices, ..[]Vertex{
-				{({0, 0, 1} + pos), col, {-1, 0, 0}},
-				{({0, 0, 0} + pos), col, {-1, 0, 0}},
-				{({0, 1, 0} + pos), col, {-1, 0, 0}},
-				{({0, 1, 1} + pos), col, {-1, 0, 0}},
-			})
-			append(indices, ..[]u32{
-				0+4*idx, 1+4*idx, 2+4*idx,
-				2+4*idx, 3+4*idx, 0+4*idx,
-			})
-			idx += 1
-		}
-
-		if (pos.x + 1 < CHUNK_SIZE && !blocks[int(pos.x + 1)][int(pos.y)][int(pos.z)]) || !(pos.x + 1 < CHUNK_SIZE) {
-			append(vertices, ..[]Vertex{
-				{({1, 0, 1} + pos), col, {+1, 0, 0}},
-				{({1, 0, 0} + pos), col, {+1, 0, 0}},
-				{({1, 1, 0} + pos), col, {+1, 0, 0}},
-				{({1, 1, 1} + pos), col, {+1, 0, 0}},
-			})
-			append(indices, ..[]u32{
-				0+4*idx, 1+4*idx, 2+4*idx,
-				2+4*idx, 3+4*idx, 0+4*idx,
-			})
-			idx += 1
+	chunk: Chunk
+	chunk.position = {}
+	chunk.blocks = make([][][]Block, CHUNK_SIZE) // @free
+	for i in 0..<CHUNK_SIZE {
+		chunk.blocks[i] = make([][]Block, CHUNK_SIZE)
+		for j in 0..<CHUNK_SIZE {
+			chunk.blocks[i][j] = make([]Block, CHUNK_SIZE)
 		}
 	}
+	chunk_init(&chunk)
+	chunk_gen(&chunk)
+	chunk_add_blocks(&chunk)
 
-	vertices := [dynamic]Vertex{}
-	indices := [dynamic]u32{}
-
-	blocks: [CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE]bool
-	b := 0
-
-	for x in 0..<CHUNK_SIZE {
-		for y in 0..<CHUNK_SIZE {
-			for z in 0..<CHUNK_SIZE {
-				blocks[x][y][z] = rand.float32() < 0.5
-			}
-		}
-	}
-	for x in 0..<CHUNK_SIZE {
-		for y in 0..<CHUNK_SIZE {
-			for z in 0..<CHUNK_SIZE {
-				block := blocks[x][y][z]
-				if !block do continue
-				b += 1
-				color: glm.vec3 = rand.float32() < 0.5 ? {137./255, 81./255, 41./255} : {0, .5, 0}
-				add_block(&vertices, &indices, blocks, {f32(x), f32(y), f32(z)}, color)
-			}
-		}
-	}
-
-	fmt.printfln("%d vertices = %f mb", len(vertices), f32(len(vertices)*size_of(Vertex))/1024./1024.)
-	fmt.printfln("%d indices = %f mb", len(indices), f32(len(indices)*size_of(u32))/1024./1024.)
-	fmt.printfln("%d blocks = %d unopt vertices", b, b*4*6)
+	// fmt.printfln("%d vertices = %f mb", len(vertices), f32(len(vertices)*size_of(Vertex))/1024./1024.)
+	// fmt.printfln("%d indices = %f mb", len(indices), f32(len(indices)*size_of(u32))/1024./1024.)
+	// fmt.printfln("%d blocks = %d unopt vertices", b, b*4*6)
 
 	gl.BindVertexArray(vao)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*size_of(vertices[0]), raw_data(vertices), gl.STATIC_DRAW)
+	gl.BindBuffer(gl.ARRAY_BUFFER, chunk.vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, len(chunk.vertices)*size_of(chunk.vertices[0]), raw_data(chunk.vertices), gl.STATIC_DRAW)
 	gl.EnableVertexAttribArray(0)
 	gl.EnableVertexAttribArray(1)
 	gl.EnableVertexAttribArray(2)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, pos))
 	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, col))
 	gl.VertexAttribPointer(2, 3, gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, nor))
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*size_of(indices[0]), raw_data(indices), gl.STATIC_DRAW)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, chunk.ebo)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(chunk.indices)*size_of(chunk.indices[0]), raw_data(chunk.indices), gl.STATIC_DRAW)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindVertexArray(0)
 
-	return {program, vao, vbo, ebo, uniforms, indices[:]}
+	return {program, vao, chunk.vbo, chunk.ebo, uniforms, chunk.indices[:]}
 }
 
 gl_deinit :: proc(glv: ^GLVars) {

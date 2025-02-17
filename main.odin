@@ -7,8 +7,6 @@ import "vendor:glfw"
 import gl "vendor:OpenGL"
 import glm "core:math/linalg/glsl"
 
-CHUNK_SIZE :: 32
-
 window: glfw.WindowHandle
 camera: Camera
 
@@ -51,7 +49,7 @@ main :: proc() {
 			camera.position -= camera.up
 		}
 
-		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
+		gl.ClearColor(135./255, 206./255, 235./255, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		gl.BindVertexArray(glv.vao)
@@ -60,7 +58,6 @@ main :: proc() {
 		gl.UniformMatrix4fv(glv.uniforms["view"].location, 1, false, raw_data(&view))
 
 		model := glm.identity(glm.mat4)
-		// model *= glm.mat4Translate({0, 0, 0})
 		gl.UniformMatrix4fv(glv.uniforms["model"].location, 1, false, raw_data(&model))
 
 		gl.DrawElements(gl.TRIANGLES, i32(len(glv.indices)), gl.UNSIGNED_INT, nil)

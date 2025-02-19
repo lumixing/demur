@@ -15,6 +15,7 @@ Chunk :: struct {
     ebo: u32,
     vertices: [dynamic]Vertex,
     indices: [dynamic]u32,
+    indices_len: i32, // DrawElements uses signed lengths idk
     vertex_idx: u32,
 }
 
@@ -126,18 +127,18 @@ chunk_gen :: proc(chunk: ^Chunk) {
     for x in 0..<CHUNK_SIZE {
 		for y in 0..<CHUNK_SIZE {
 			for z in 0..<CHUNK_SIZE {
-				// chunk.blocks[x][y][z] = rand.choice_enum(Block)
-                nx := i32(x) + chunk.position.x * 32
-                ny := i32(y) + chunk.position.y * 32
-                nz := i32(z) + chunk.position.z * 32
-                rng := noise.noise_3d_fallback(0, [3]f64{f64(nx)/100, f64(ny)/100, f64(nz)/100})
-                block := Block.Air
-                if rng < 0.4 {
-                    block = .Dirt
-                } else if rng < 0.5 {
-                    block = .Grass
-                }
-				chunk.blocks[x][y][z] = block
+				chunk.blocks[x][y][z] = rand.choice_enum(Block)
+                // nx := i32(x) + chunk.position.x * 32
+                // ny := i32(y) + chunk.position.y * 32
+                // nz := i32(z) + chunk.position.z * 32
+                // rng := noise.noise_3d_fallback(0, [3]f64{f64(nx)/100, f64(ny)/100, f64(nz)/100})
+                // block := Block.Air
+                // if rng < 0.4 {
+                //     block = .Dirt
+                // } else if rng < 0.5 {
+                //     block = .Grass
+                // }
+				// chunk.blocks[x][y][z] = block
 			}
 		}
 	}
@@ -163,7 +164,7 @@ chunk_use :: proc(chunk: ^Chunk, vao: u32) {
 	gl.VertexAttribPointer(2, 3, gl.FLOAT, false, size_of(Vertex), offset_of(Vertex, nor))
 }
 
-Block :: enum {
+Block :: enum(u8) {
     Air,
     Grass,
     Dirt,

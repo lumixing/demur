@@ -31,10 +31,10 @@ main :: proc() {
 		defer glfw.SwapBuffers(window)
 
 		if glfw.GetKey(window, glfw.KEY_W) == glfw.PRESS {
-			camera.position += camera.front
+			camera.position.xz += glm.normalize_vec2(camera.front.xz).xy
 		}
 		if glfw.GetKey(window, glfw.KEY_S) == glfw.PRESS {
-			camera.position -= camera.front
+			camera.position.xz -= glm.normalize_vec2(camera.front.xz).xy
 		}
 		if glfw.GetKey(window, glfw.KEY_A) == glfw.PRESS {
 			camera.position -= glm.normalize(glm.cross(camera.front, camera.up))
@@ -63,7 +63,7 @@ main :: proc() {
 		for &chunk in glv.chunks {
 			gl.Uniform3iv(glv.uniforms["chunk_pos"].location, 1, raw_data(&chunk.position))
 			chunk_use(&chunk, glv.vao)
-			gl.DrawElements(gl.TRIANGLES, i32(len(chunk.indices)), gl.UNSIGNED_INT, nil)
+			gl.DrawElements(gl.TRIANGLES, chunk.indices_len, gl.UNSIGNED_INT, nil)
 		}
 
 	}

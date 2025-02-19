@@ -19,7 +19,7 @@ glfw_init :: proc() {
 
 	window = glfw.CreateWindow(800, 600, "larry in opengl!", nil, nil)
 	glfw.SetWindowPos(window, 1920/2-400, 1080/2-300)
-	glfw.SetInputMode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)
+	// glfw.SetInputMode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)
 
 	if window == nil {
 		panic("could not create window")
@@ -60,9 +60,9 @@ gl_init :: proc() -> GLVars {
 
 	chunks: [dynamic]Chunk
 
-	for x in 0..<16 {
+	for x in 0..<2 {
 		for y in 0..<2 {
-			for z in 0..<16 {
+			for z in 0..<2 {
 				chunk: Chunk
 				chunk.position = {i32(x), i32(y), i32(z)}
 				chunk.blocks = make([][][]Block, CHUNK_SIZE) // @free
@@ -76,43 +76,14 @@ gl_init :: proc() -> GLVars {
 				chunk_gen(&chunk)
 				chunk_add_blocks(&chunk)
 				chunk_setup(&chunk)
+				chunk.indices_len = i32(len(chunk.indices))
+				delete(chunk.vertices)
+				delete(chunk.indices)
 
 				append(&chunks, chunk)
 			}
 		}
 	}
-
-	
-
-	// gl.Uniform3iv(uniforms["chunk_pos"].location, 1, raw_data(&chunk.position))
-
-	// chunk2: Chunk
-	// chunk2.position = {0, 1, 0}
-	// chunk2.blocks = make([][][]Block, CHUNK_SIZE) // @free
-	// for i in 0..<CHUNK_SIZE {
-	// 	chunk2.blocks[i] = make([][]Block, CHUNK_SIZE)
-	// 	for j in 0..<CHUNK_SIZE {
-	// 		chunk2.blocks[i][j] = make([]Block, CHUNK_SIZE)
-	// 	}
-	// }
-	// chunk_init(&chunk2)
-	// chunk_gen(&chunk2)
-	// chunk_add_blocks(&chunk2)
-	// chunk_setup(&chunk2)
-
-	// append(&chunks, chunk2)
-
-	// gl.Uniform3iv(uniforms["chunk_pos"].location, 1, raw_data(&chunk2.position))
-	// fmt.printfln("%d vertices = %f mb", len(vertices), f32(len(vertices)*size_of(Vertex))/1024./1024.)
-	// fmt.printfln("%d indices = %f mb", len(indices), f32(len(indices)*size_of(u32))/1024./1024.)
-	// fmt.printfln("%d blocks = %d unopt vertices", b, b*4*6)
-
-	// chunk_use(&chunk, vao)
-
-	// chunk_use(&chunk2, vao)
-
-	// gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-	// gl.BindVertexArray(0)
 
 	return {program, vao, uniforms, chunks[:]}
 }

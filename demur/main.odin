@@ -1,4 +1,4 @@
-package main
+package demur
 
 import "core:fmt"
 import "core:math"

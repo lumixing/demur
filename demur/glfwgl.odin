@@ -1,4 +1,4 @@
-package main
+package demur
 
 import "core:fmt"
 import "core:math"
@@ -60,9 +60,9 @@ gl_init :: proc() -> GLVars {
 
 	chunks: [dynamic]Chunk
 
-	for x in 0..<2 {
-		for y in 0..<2 {
-			for z in 0..<2 {
+	for x in 0..<4 {
+		for y in 0..<4 {
+			for z in 0..<4 {
 				chunk: Chunk
 				chunk.position = {i32(x), i32(y), i32(z)}
 				chunk.blocks = make([][][]Block, CHUNK_SIZE) // @free

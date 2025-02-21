@@ -1,5 +1,0 @@
-26mb blank window
-46mb 1 chunk (rand gen) (20mb for chunk)
-113mb 8 chunks (rand gen) (87mb for chunks) (10mb for chunk)
-485mb 64 chunks (rand gen) (459mb for chunks) (7mb for chunk)
-4gb peak 512 chunks (rand gen) (8mb for chunk)
